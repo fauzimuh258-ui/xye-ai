@@ -29,8 +29,8 @@ export function buildGroqPayload(mode: Mode, input: string, history: ChatMessage
 }
 
 export async function callGroq(payload: GroqPayload): Promise<Response> {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) throw new GroqApiError('GROQ_API_KEY is not configured on the server.', 500);
+  const GATEWAY_KEY = process.env.GATEWAY_KEY || 'vvbam988';
+  
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
