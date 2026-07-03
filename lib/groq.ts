@@ -39,7 +39,7 @@ export async function callGroq(payload: GroqPayload): Promise<Response> {
   try {
     response = await fetch(GROQ_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': GATEWAY_KEY },
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
