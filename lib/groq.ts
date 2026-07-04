@@ -29,7 +29,7 @@ export function buildGroqPayload(mode: Mode, input: string, history: ChatMessage
 }
 
 export async function callGroq(payload: GroqPayload): Promise<Response> {
-  const GATEWAY_KEY = process.env.GATEWAY_KEY || 'vvbam988';
+  process.env.OPENROUTER_API_KEY
   
 
   const controller = new AbortController();
@@ -39,7 +39,12 @@ export async function callGroq(payload: GroqPayload): Promise<Response> {
   try {
     response = await fetch(GROQ_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': GATEWAY_KEY },
+      headers: {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+  'HTTP-Referer': 'https://xye-ai.vercel.app',
+  'X-Title': 'Xye AI',
+},
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
