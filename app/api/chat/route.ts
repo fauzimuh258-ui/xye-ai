@@ -1,79 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { buildGroqPayload, callGroq, GroqApiError } from '@/lib/groq';
-import { toTextStream } from '@/lib/stream-parser';
-import { MAX_INPUT_LENGTH, VALID_MODES } from '@/lib/constants';
-import type { ChatMessage, ChatRequestBody } from '@/lib/types';
 
 export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-
-function sanitizeHistory(history: unknown): ChatMessage[] {
-  if (!Array.isArray(history)) return [];
-  return history.filter((m): m is ChatMessage => {
-    if (!m || typeof m !== 'object') return false;
-    const candidate = m as Record<string, unknown>;
-    return (
-      (candidate.role === 'user' || candidate.role === 'assistant') &&
-      typeof candidate.content === 'string'
-    );
-  });
-}
 
 export async function POST(req: NextRequest) {
-  let body: ChatRequestBody;
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Request body must be valid JSON.' }, { status: 400 });
-  }
+    const body = await req.json();
+    const { mode, input } = body;
 
-  const { mode, input } = body;
-  const history = sanitizeHistory(body.history);
-
-  if (!mode || !VALID_MODES.includes(mode)) {
-    return NextResponse.json(
-      { error: `mode must be one of: ${VALID_MODES.join(', ')}` },
-      { status: 400 }
-    );
-  }
-
-  if (!input || typeof input !== 'string' || !input.trim()) {
-    return NextResponse.json({ error: 'input is required.' }, { status: 400 });
-  }
-
-  if (input.length > MAX_INPUT_LENGTH) {
-    return NextResponse.json(
-      { error: `input exceeds ${MAX_INPUT_LENGTH} character limit.` },
-      { status: 413 }
-    );
-  }
-
-  try {
-    const payload = buildGroqPayload(mode, input, history);
-    const groqResponse = await callGroq(payload);
-    const textStream = toTextStream(groqResponse.body!);
-
-    return new Response(textStream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache, no-transform',
-        'X-Content-Type-Options': 'nosniff',
-      },
-    });
-  } catch (err) {
-    if (err instanceof GroqApiError) {
-      const headers: Record<string, string> = {};
-      if (err.retryAfter) headers['Retry-After'] = String(err.retryAfter);
-      return NextResponse.json(
-        {
-          error:
-            err.status === 429
-              ? 'Rate limit exceeded. Please retry shortly.'
-              : err.message,
-        },
-        { status: err.status, headers }
-      );
+    if (!input) {
+      return NextResponse.json({ error: 'Input required' }, { status: 400 });
     }
-    return NextResponse.json({ error: 'Unexpected server error.' }, { status: 500 });
+
+    const res = await fetch('https://api.cloudflare.com/client/v4/accounts/8c9cbf3dc700e1e7b731b52e94bf6c9d/ai/run', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.CF_API_TOKEN}`,
+      },
+      body: JSON.stringify({
+        model: '@cf/meta/llama-3-8b-instruct',
+        input: {
+          messages: [
+            { role: 'system', content: `You are Xye AI, a coding specialist. Mode: ${mode || 'WRITE'}. Keep responses concise.` },
+            { role: 'user', content: input },
+          ],
+        },
+        max_tokens: 2048,
+        temperature: 0.3,
+      }),
+    });
+
+    const data = await res.json();
+    const content = data?.result?.response || 'No response';
+
+    return NextResponse.json({ content });
+  } catch (err) {
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-}
+  }
