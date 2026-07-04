@@ -31,7 +31,18 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await res.json();
-    const content = data?.result?.response || 'No response';
+
+// DEBUG: Tampilkan seluruh response
+console.log('Cloudflare response:', JSON.stringify(data).slice(0, 500));
+
+// Coba berbagai format response
+const content = 
+  data?.result?.response ||
+  data?.result?.content ||
+  data?.response ||
+  data?.choices?.[0]?.message?.content ||
+  JSON.stringify(data);
+    
 
     return NextResponse.json({ content });
   } catch (err) {
