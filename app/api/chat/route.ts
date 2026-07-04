@@ -11,41 +11,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Input required' }, { status: 400 });
     }
 
-    const res = await fetch('https://api.cloudflare.com/client/v4/accounts/8c9cbf3dc700e1e7b731b52e94bf6c9d/ai/run', {
+    const res = await fetch('https://zey-ai.vercel.app/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.CF_API_TOKEN}`,
+        'x-api-key': 'vvbam988',
       },
       body: JSON.stringify({
-        model: '@cf/google/gemma-2b-it',
-        input: {
-          messages: [
-            { role: 'system', content: `You are Xye AI, a coding specialist. Mode: ${mode || 'WRITE'}. Keep responses concise.` },
-            { role: 'user', content: input },
-          ],
-        },
+        messages: [{ role: 'user', content: `[MODE: ${mode || 'WRITE'}]\n\n${input}` }],
+        model: 'gpt-oss-120b',
         max_tokens: 2048,
         temperature: 0.3,
+        stream: false,
       }),
     });
 
     const data = await res.json();
-
-// DEBUG: Tampilkan seluruh response
-console.log('Cloudflare response:', JSON.stringify(data).slice(0, 500));
-
-// Coba berbagai format response
-const content = 
-  data?.result?.response ||
-  data?.result?.content ||
-  data?.response ||
-  data?.choices?.[0]?.message?.content ||
-  JSON.stringify(data);
-    
+    const content = data?.choices?.[0]?.message?.content || 'No response';
 
     return NextResponse.json({ content });
   } catch (err) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-  }
+      }
