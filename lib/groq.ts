@@ -1,4 +1,4 @@
-import { GROQ_API_URL, MAX_HISTORY_MESSAGES, MAX_TOKENS, MODEL_ID, REQUEST_TIMEOUT_MS, TEMPERATURE } from './constants';
+import { GROQ_API_URL, MAX_HISTORY_MESSAGES, MAX_TOKENS, MODELS, REQUEST_TIMEOUT_MS, TEMPERATURE } from './constants';
 import { SYSTEM_PROMPT } from './prompts/system-prompt';
 import type { ChatMessage, GroqPayload, Mode } from './types';
 
@@ -13,10 +13,11 @@ function buildUserContent(mode: Mode, input: string): string {
   return `[MODE: ${mode}]\n\n${input}`;
 }
 
-export function buildGroqPayload(mode: Mode, input: string, history: ChatMessage[] = []): GroqPayload {
+export function buildGroqPayload(mode: Mode, input: string, history: ChatMessage[] = [], modelIndex: number = 0): GroqPayload {
   const trimmedHistory = history.slice(-MAX_HISTORY_MESSAGES);
+  const model = MODELS[modelIndex] || MODELS[0];
   return {
-    model: MODEL_ID,
+    model: model,
     stream: true,
     temperature: TEMPERATURE,
     max_tokens: MAX_TOKENS,
@@ -35,36 +36,47 @@ export async function callGroq(payload: GroqPayload): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-  let response: Response;
-  try {
-    response = await fetch(GROQ_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://xye-ai.vercel.app',
-        'X-Title': 'Xye AI',
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-  } catch (err) {
-    clearTimeout(timeout);
-    if (err instanceof Error && err.name === 'AbortError') throw new GroqApiError('Groq request timed out.', 504);
-    throw new GroqApiError('Network error while reaching Groq API.', 502);
-  }
-  clearTimeout(timeout);
+  let lastError: Error | null = null;
 
-  if (!response.ok) {
-    const retryAfter = response.headers.get('retry-after');
-    let message = `Groq API returned ${response.status}.`;
+  // Coba semua model di daftar MODELS
+  for (let i = 0; i < MODELS.length; i++) {
     try {
-      const errorBody = await response.json();
-      if (errorBody?.error?.message) message = errorBody.error.message;
-    } catch {}
-    throw new GroqApiError(message, response.status, retryAfter ? Number(retryAfter) : undefined);
+      const currentPayload = { ...payload, model: MODELS[i] };
+      
+      const response = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': 'https://xye-ai.vercel.app',
+          'X-Title': 'Xye AI',
+        },
+        body: JSON.stringify(currentPayload),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      if (response.ok && response.body) {
+        return response;
+      }
+
+      // Kalau gagal, catat error dan coba model berikutnya
+      const errorBody = await response.json().catch(() => ({}));
+      console.log(`Model ${MODELS[i]} failed, trying next...`);
+      lastError = new Error(errorBody?.error?.message || `HTTP ${response.status}`);
+    } catch (err) {
+      clearTimeout(timeout);
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new GroqApiError('Request timed out.', 504);
+      }
+      lastError = err instanceof Error ? err : new Error('Unknown error');
+    }
   }
 
-  if (!response.body) throw new GroqApiError('Groq API returned an empty stream.', 502);
-  return response;
+  // Semua model gagal
+  throw new GroqApiError(
+    lastError?.message || 'All models failed.',
+    502
+  );
 }
