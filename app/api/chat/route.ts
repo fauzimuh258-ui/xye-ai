@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         messages: [{ role: 'user', content: `[MODE: ${mode || 'WRITE'}]\n\n${input}` }],
-        model: 'gpt-oss-120b',
+        model: 'llama-3.3-70b-versatile',
         max_tokens: 2048,
         temperature: 0.3,
         stream: false,
@@ -27,7 +27,13 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content || 'No response';
+    console.log('Gateway response:', JSON.stringify(data).slice(0, 300));
+
+    const content = 
+      data?.content ||
+      data?.choices?.[0]?.message?.content ||
+      data?.error ||
+      JSON.stringify(data);
 
     return NextResponse.json({ content });
   } catch (err) {
