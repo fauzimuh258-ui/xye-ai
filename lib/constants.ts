@@ -1,7 +1,7 @@
 import type { Mode } from './types';
 
-export const MODEL_ID = 'gpt-oss-120b';
-export const GROQ_API_URL = 'https://zey-ai.vercel.app/api/chat';
+export const MODEL_ID = 'mistralai/mistral-7b-instruct';
+export const GROQ_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export const MAX_TOKENS = 4096;
 export const TEMPERATURE = 0.3;
