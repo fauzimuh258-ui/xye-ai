@@ -29,8 +29,8 @@ export function buildGroqPayload(mode: Mode, input: string, history: ChatMessage
 }
 
 export async function callGroq(payload: GroqPayload): Promise<Response> {
-  process.env.OPENROUTER_API_KEY
-  
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new GroqApiError('OPENROUTER_API_KEY is not configured on the server.', 500);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -40,11 +40,11 @@ export async function callGroq(payload: GroqPayload): Promise<Response> {
     response = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-  'HTTP-Referer': 'https://xye-ai.vercel.app',
-  'X-Title': 'Xye AI',
-},
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://xye-ai.vercel.app',
+        'X-Title': 'Xye AI',
+      },
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
