@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         'Authorization': `Bearer ${process.env.CF_API_TOKEN}`,
       },
       body: JSON.stringify({
-        model: '@cf/meta/llama-3-8b-instruct',
+        model: '@cf/mistral/mistral-7b-instruct',
         input: {
           messages: [
             { role: 'system', content: `You are Xye AI, a coding specialist. Mode: ${mode || 'WRITE'}. Keep responses concise.` },
