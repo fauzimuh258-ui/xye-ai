@@ -13,3 +13,7 @@ export const VALID_MODES: readonly Mode[] = ['WRITE', 'DEBUG', 'REVIEW', 'OPTIMI
 export const ZEY_SEARCH_TIMEOUT_MS = 6_000;
 export const MAX_DOCS_CONTEXT_ENTRIES = 4;
 export const MAX_SNIPPET_CHARS = 500;
+
+// Self-correction loop
+export const MAX_CORRECTION_ROUNDS = 2;
+export const CRITIQUE_MAX_TOKENS = 512;
