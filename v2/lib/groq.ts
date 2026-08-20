@@ -27,7 +27,7 @@ function formatDocsContext(docsContext: DocsContextEntry[]): string {
   return `[RETRIEVED DOCS]\n${entries}\n[/RETRIEVED DOCS]`;
 }
 
-function buildUserContent(mode: Mode, input: string, docsContext: DocsContextEntry[] = []): string {
+export function buildUserContent(mode: Mode, input: string, docsContext: DocsContextEntry[] = []): string {
   const docsBlock = docsContext.length > 0 ? `${formatDocsContext(docsContext)}\n\n` : '';
   return `${docsBlock}[MODE: ${mode}]\n\n${input}`;
 }
@@ -103,4 +103,4 @@ export async function callGroq(payload: GroqPayload): Promise<Response> {
   }
 
   return response;
-}
+  }
