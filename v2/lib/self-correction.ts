@@ -100,11 +100,11 @@ async function revise(
  *
  * Only WRITE, DEBUG, OPTIMIZE, and REVIEW pass through this, matching where
  * SYSTEM_PROMPT's own SELF-CORRECTION LOOP section says it's mandatory.
- * EXPLAIN and PROMPT_ENGINEER return the draft unchanged — there's no
- * "correct/incorrect code" to adversarially verify in the same sense.
  *
- * Cost: 1 extra call on an already-clean draft; up to 1 + 2 x MAX_CORRECTION_ROUNDS
- * calls total in the worst case (every round finds issues).
+ * Resilience: if a critique or revise call itself fails (network error, rate
+ * limit, timeout), the loop stops and returns the last known-good text rather
+ * than throwing — a self-correction failure must never turn an already-valid
+ * draft into a hard failure for the user.
  */
 export async function selfCorrect(
   mode: Mode,
@@ -119,10 +119,14 @@ export async function selfCorrect(
   let current = draft;
 
   for (let round = 0; round < MAX_CORRECTION_ROUNDS; round++) {
-    const issues = await critique(taskDescription, current);
-    if (!issues) break;
-    current = await revise(history, taskDescription, current, issues);
+    try {
+      const issues = await critique(taskDescription, current);
+      if (!issues) break;
+      current = await revise(history, taskDescription, current, issues);
+    } catch {
+      break; // critique/revise itself failed — keep whatever `current` already is
+    }
   }
 
   return current;
-}
+    }
