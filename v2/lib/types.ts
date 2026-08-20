@@ -10,6 +10,7 @@ export interface ChatRequestBody {
   input: string;
   history?: ChatMessage[];
   enableSearch?: boolean;
+  enableSelfCorrection?: boolean;
 }
 
 export interface GroqPayload {
@@ -39,4 +40,4 @@ export interface HistoryEntry {
 export interface DocsContextEntry {
   source: string;
   snippet: string;
-}
+  }
