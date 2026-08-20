@@ -1,0 +1,33 @@
+FUNCTION handle_request(mode, input, history, docs_context):
+    draft = LLM_CALL(
+        system  = XYE_SYSTEM_PROMPT,
+        messages = [...history, user(mode, input, docs_context)]
+    )
+
+    IF mode NOT IN {WRITE, DEBUG, OPTIMIZE, REVIEW}:
+        RETURN draft            // EXPLAIN & PROMPT_ENGINEER skip correction —
+                                 // tidak ada "kode benar/salah" untuk diverifikasi
+
+    current = draft
+    task    = format_task(mode, input, docs_context)
+
+    FOR round IN 1..MAX_CORRECTION_ROUNDS:
+        verdict = LLM_CALL(
+            system   = CRITIC_PROMPT,     // persona reviewer adversarial, TERPISAH dari XYE_SYSTEM_PROMPT
+            messages = [user(f"TASK:\n{task}\n\nSOLUTION:\n{current}")]
+        )
+
+        IF verdict == "CLEAN":
+            BREAK                        // sudah bersih, hentikan loop
+
+        issues = parse_issue_lines(verdict)
+        IF issues IS EMPTY:
+            BREAK                        // verdict ambigu/tak terparsing -> fail-safe berhenti, JANGAN loop terus
+
+        current = LLM_CALL(
+            system   = XYE_SYSTEM_PROMPT,
+            messages = [...history, user(task), assistant(current),
+                        user(f"Reviewer menemukan masalah ini:\n{issues}\nPerbaiki semuanya.")]
+        )
+
+    RETURN current
