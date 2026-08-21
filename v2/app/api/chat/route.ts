@@ -1,11 +1,15 @@
+import { NextRequest, NextResponse } from 'next/server';
 import { buildGroqPayload, callGroq, GroqApiError } from '../../../lib/groq';
 import { fetchDocsContext } from '../../../lib/zey-search';
 import { selfCorrect } from '../../../lib/self-correction';
 import { bufferStreamText, toTextStream } from '../../../lib/stream-parser';
 import { MAX_INPUT_LENGTH, VALID_MODES } from '../../../lib/constants';
 import type { ChatMessage, ChatRequestBody } from '../../../lib/types';
+
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
+
+// ... sisa kode
 
 function sanitizeHistory(history: unknown): ChatMessage[] {
   if (!Array.isArray(history)) return [];
