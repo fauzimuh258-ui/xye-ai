@@ -1,9 +1,9 @@
 'use client';
 
 import type { KeyboardEvent } from 'react';
-import { Textarea } from '@/components/ui/Textarea';
-import { Button } from '@/components/ui/Button';
-import type { Mode } from '@/lib/types';
+import { Textarea } from '../../components/ui/Textarea';
+import { Button } from '../../components/ui/Button';
+import type { Mode } from '../../lib/types';
 
 const PLACEHOLDER: Record<Mode, string> = {
   WRITE: 'Describe what you want built, e.g. "a debounce hook in TypeScript"...',
