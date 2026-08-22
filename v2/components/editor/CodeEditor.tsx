@@ -1,8 +1,8 @@
 'use client';
 
 import type { KeyboardEvent } from 'react';
-import { Textarea } from '../../components/ui/Textarea';
-import { Button } from '../../components/ui/Button';
+import { Textarea } from '../ui/Textarea';
+import { Button } from '../ui/Button';
 import type { Mode } from '../../lib/types';
 
 const PLACEHOLDER: Record<Mode, string> = {
