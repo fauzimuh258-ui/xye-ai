@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import type { Mode } from '@/lib/types';
+import { cn } from '../../lib/utils';
+import type { Mode } from '../../lib/types';
 
 const MODES: { value: Mode; label: string; hint: string }[] = [
   { value: 'WRITE', label: 'Write', hint: 'Generate new code' },
